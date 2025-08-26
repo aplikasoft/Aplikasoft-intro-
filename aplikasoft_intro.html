@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Падающие буквы из центра сверху (еще быстрее)</title>
+<script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js/dist/svg.min.js"></script>
+<style>
+html, body {
+ margin:0; padding:0; height:100%; overflow:hidden;
+}
+#drawing { width:100%; height:100%; display:block; }
+</style>
+</head>
+<body>
+
+<div id="drawing"></div>
+
+<script>
+const draw = SVG().addTo('#drawing').size('100%', '100%');
+
+const width = window.innerWidth;
+const height = window.innerHeight;
+
+const phrase = 'aplikasoft';
+const fontSize = Math.min(width, height) /10;
+
+// Массив цветов для каждой буквы
+const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet', '#FF69B4', '#00CED1', '#FFD700', '#ADFF2F'];
+
+// Создаем массив элементов для каждой буквы без позиционирования
+const letterElements = [];
+for (let i=0; i<phrase.length; i++) {
+    let letter = phrase[i];
+    let t = draw.text(letter)
+        .font({ size: fontSize, family:'Arial' });
+    // Изначально размещаем в центре экрана сверху
+    t.move(width/2, -fontSize*2);
+    // Раскрашиваем в разные цвета
+    const color = colors[i % colors.length];
+    t.fill(color);
+    letterElements.push(t);
+}
+
+// Вычисляем ширину всей строки для центрирования по горизонтали
+const totalWidth = letterElements.reduce((sum, el) => sum + el.bbox().width, 0);
+const startX = width/2 - totalWidth/2;
+
+// Время падения — уменьшаем до 100 мс
+const fallDuration = 100; // миллисекунды
+
+// Интервал между началом падения букв — уменьшаем до 250 мс
+const intervalBetweenLetters = 250; // миллисекунды
+
+// Время исчезновения букв
+const fadeDuration = 1000; // миллисекунды
+
+// Функция для плавного исчезновения всех букв
+function fadeOutAllLetters() {
+    letterElements.forEach((el) => {
+        el.animate(fadeDuration).opacity(0).after(() => {
+            el.remove(); // Удаляем элемент после исчезновения
+        });
+    });
+}
+
+// Для каждой буквы запланируем анимацию падения из центра сверху с меньшим интервалом
+letterElements.forEach((el, index) => {
+    const targetXOffset = letterElements.slice(0, index).reduce((sum, e) => sum + e.bbox().width, 0);
+    const targetX = startX + targetXOffset;
+    const targetY = height/2 - el.bbox().height/2;
+
+    const delay = index * intervalBetweenLetters; // миллисекунды
+
+    setTimeout(() => {
+        el.animate(fallDuration).move(targetX, targetY);
+        
+        // Если это последняя буква, запускаем исчезновение после завершения ее падения
+        if (index === phrase.length - 1) {
+            setTimeout(() => {
+                fadeOutAllLetters();
+            }, fallDuration);
+        }
+    }, delay);
+});
+</script>
+
+</body>
+</html>
